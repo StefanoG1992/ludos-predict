@@ -10,14 +10,12 @@ seaborn = "*"
 matplotlib = "*"
 sklearn = "*"
 imblearn = "*"
-tabulate = "*"
 catboost = "*"
 shap = "*"
 click="*"
 
 [dev-packages]
 black = "*"
-jupyter = "*"
 
 [requires]
 python_version = "3.10"
