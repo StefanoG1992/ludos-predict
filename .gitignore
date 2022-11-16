@@ -2,6 +2,7 @@
 .DS_Store
 
 # excluded folders
+catboost_info
 data
 old
 notebooks
