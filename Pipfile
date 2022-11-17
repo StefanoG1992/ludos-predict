@@ -10,14 +10,16 @@ seaborn = "*"
 matplotlib = "*"
 sklearn = "*"
 imblearn = "*"
-tabulate = "*"
 catboost = "*"
 shap = "*"
 click="*"
 
 [dev-packages]
 black = "*"
-jupyter = "*"
+pre-commit = "*"
 
 [requires]
 python_version = "3.10"
+
+[scripts]
+init = "pre-commit install"
