@@ -15,9 +15,9 @@ import seaborn as sns
 
 from sklearn.model_selection import train_test_split
 
-from sklearn.preprocessing import StandardScaler
-from catboost import CatBoostClassifier
 from sklearn.neural_network import MLPRegressor
+
+from models.models import get_shap_features
 
 
 # initialize logger
@@ -25,12 +25,10 @@ logger = logging.getLogger(__name__)
 
 
 def heatmap_correlation(
-        X: pd.DataFrame,
-        save_path: Path,
+    X: pd.DataFrame,
+    save_path: Path,
 ) -> None:
-    """
-    Compute correlation matrix as plot as heatmap
-    """
+    """Compute correlation matrix as plot as heatmap."""
     # compute correlation matrix
     corr_matrix = X.corr()
 
@@ -54,11 +52,8 @@ def heatmap_correlation(
     plt.close()
 
 
-def class_frequency(
-        y: pd.Series,
-        save_path: Path
-) -> None:
-    """Simple bar plot of classes frequency"""
+def class_frequency(y: pd.Series, save_path: Path) -> None:
+    """Simple bar plot of classes frequency."""
     # title
     title = "Class frequency"
 
@@ -76,12 +71,11 @@ def class_frequency(
 
 
 def print_shap_values(
-        X: pd.DataFrame,
-        y: pd.Series,
-        save_dir: Path,
+    X: pd.DataFrame,
+    y: pd.Series,
+    save_dir: Path,
 ) -> None:
-    """
-    Plot Shapley feature importance using tree model.
+    """Plot Shapley feature importance using tree model.
 
     :param X: Explanatory data as df
     :param y: Classes as series
@@ -91,35 +85,13 @@ def print_shap_values(
     logger.info("Computing Shapley values.")
     title = "shapley_values"
 
-    # split values
-    X_train, X_val, y_train, y_val = train_test_split(
-        X, y, train_size=0.7, shuffle=True, stratify=y
-    )
-
-    # rescale values as CatBoost is sensitive
-    scl = StandardScaler()
-    X_train_scl = scl.fit_transform(X_train)
-    X_val_scl = scl.transform(X_val)
-
-    # simple model
-    mdl = CatBoostClassifier(allow_writing_files=False)
-    mdl.fit(
-        X=X_train_scl,
-        y=y_train,
-        verbose=0,
-        eval_set=(X_val_scl, y_val),
-        use_best_model=True
-    )
-
-    explainer = shap.TreeExplainer(mdl)
-    shap_values = explainer.shap_values(X_train_scl)
+    # generate shap_values
+    shap_values, _ = get_shap_features(X, y, n_top=len(X.columns))
 
     # Generate and save shapley summary plot
     shap.summary_plot(
         shap_values=shap_values,
-        features=X_train_scl,
         feature_names=X.columns,
-        class_names=mdl.classes_,
         plot_type="bar",
         show=False,
         plot_size=(10, 20),
@@ -135,12 +107,8 @@ def print_shap_values(
     logger.info(f"Shapley summary info saved in {save_dir}")
 
 
-def encoder(
-        X: pd.DataFrame | np.ndarray | list,
-        reg: MLPRegressor
-) -> np.ndarray:
-    """
-    Encode data in 2D.
+def encoder(X: pd.DataFrame | np.ndarray | list, reg: MLPRegressor) -> np.ndarray:
+    """Encode data in 2D.
 
     :param X: explanatory data
     :param reg: trained model
@@ -149,10 +117,14 @@ def encoder(
     X = np.asmatrix(X)
 
     encoder1 = X * reg.coefs_[0] + reg.intercepts_[0]
-    encoder1 = (np.exp(encoder1) - np.exp(-encoder1)) / (np.exp(encoder1) + np.exp(-encoder1))
+    encoder1 = (np.exp(encoder1) - np.exp(-encoder1)) / (
+        np.exp(encoder1) + np.exp(-encoder1)
+    )
 
     encoder2 = encoder1 * reg.coefs_[1] + reg.intercepts_[1]
-    encoder2 = (np.exp(encoder2) - np.exp(-encoder2)) / (np.exp(encoder2) + np.exp(-encoder2))
+    encoder2 = (np.exp(encoder2) - np.exp(-encoder2)) / (
+        np.exp(encoder2) + np.exp(-encoder2)
+    )
 
     latent = encoder2 * reg.coefs_[2] + reg.intercepts_[2]
     latent = (np.exp(latent) - np.exp(-latent)) / (np.exp(latent) + np.exp(-latent))
@@ -161,12 +133,11 @@ def encoder(
 
 
 def plot_2d(
-        X: pd.DataFrame,
-        y: pd.Series,
-        save_dir: Path,
+    X: pd.DataFrame,
+    y: pd.Series,
+    save_dir: Path,
 ) -> None:
-    """
-    Transform data in 2D and plot them.
+    """Transform data in 2D and plot them.
 
     Data are transformed in 2D via autoencoding.
     The autoencoder is defined as a MLPRegressor with dimensions:
@@ -188,16 +159,19 @@ def plot_2d(
     # creating train test split
     # y_train not used
     X_train, X_test, _, y_test = train_test_split(
-        X, train_size=0.7, shuffle=True,
+        X,
+        train_size=0.7,
+        shuffle=True,
     )
 
     logger.info("Define autoencoding model.")
     reg = MLPRegressor(
         hidden_layer_sizes=(10, 5, 2, 5, 10),
-        activation='tanh',
-        solver='adam',
+        activation="tanh",
+        solver="adam",
         learning_rate_init=0.0001,
-        max_iter=20)
+        max_iter=20,
+    )
 
     logger.info("Fitting model")
     reg.fit(X_train, X_train)  # for autoencoders, same matrix is train & test
@@ -210,10 +184,11 @@ def plot_2d(
         plt.scatter(
             test_latent[np.argmax(y_test, axis=1) == y_class, 0],
             test_latent[np.argmax(y_test, axis=1) == y_class, 1],
-            label=f'Class {y_class}')
+            label=f"Class {y_class}",
+        )
     plt.title(title)
     plt.legend(fontsize=15)
-    plt.axis('equal')
+    plt.axis("equal")
 
     # save image
     image_path = save_dir / f"{title}.png"
@@ -222,6 +197,3 @@ def plot_2d(
 
     # end
     logger.info(f"Shapley summary info saved in {save_dir}")
-
-
-

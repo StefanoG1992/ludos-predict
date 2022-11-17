@@ -1,4 +1,4 @@
-"""Models module
+"""Models module.
 
 This module contains all self-made ML models for data science purposes
 """
@@ -14,19 +14,23 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from catboost import CatBoostClassifier
 
-from typing import List
-
 
 # initialize logger
 logger = logging.getLogger(__name__)
 
 
-# TODO Boilerplate code with plot.py, fix it
-def get_shap_top_features(
-        X: pd.DataFrame,
-        y: pd.Series,
-        n_top: int,
-) -> List[str]:
+def get_shap_features(
+    X: pd.DataFrame,
+    y: pd.Series,
+    n_top: int = 10,
+) -> (list, list[str]):
+    """Compute shapley features for a model using CatBoostClassifier as model.
+
+    :param X: Explanable data
+    :param y: Classes
+    :param n_top: top n features to return. Default = 10
+    :return: Tuple (Explainer.shap_values, list of sorted best features)
+    """
     logger.info(f"Computing {n_top} best features")
 
     # split values
@@ -47,7 +51,7 @@ def get_shap_top_features(
         y=y_train,
         verbose=0,
         eval_set=(X_val_scl, y_val),
-        use_best_model=True
+        use_best_model=True,
     )
 
     logger.info("Explaining data")
@@ -55,7 +59,7 @@ def get_shap_top_features(
     # shap explainer
     explainer = shap.TreeExplainer(mdl)
     # shap values are a list
-    shap_values: List = explainer.shap_values(X_train_scl)
+    shap_values: list = explainer.shap_values(X_train_scl)
 
     # generate feature importances df
     shap_array = np.array(shap_values)  # shape = (# classes, # data, # features)
@@ -73,12 +77,6 @@ def get_shap_top_features(
     best_features: pd.Series = features_df.sum().sort_values(ascending=False)
 
     # taking first n values
-    best_n_features = best_features.loc[:n_top]
+    best_n_features = best_features.iloc[:n_top]
 
-    return best_n_features
-
-
-
-
-
-
+    return shap_values, best_n_features
