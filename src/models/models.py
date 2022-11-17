@@ -7,11 +7,13 @@ import logging
 import shap
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 from sklearn.model_selection import train_test_split
 
 from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPRegressor
 from catboost import CatBoostClassifier
 
 
@@ -23,7 +25,7 @@ def get_shap_features(
     X: pd.DataFrame,
     y: pd.Series,
     n_top: int = 10,
-) -> (list, list[str]):
+) -> (list[list[npt.NDArray]], list[str]):
     """Compute shapley features for a model using CatBoostClassifier as model.
 
     :param X: Explanable data
@@ -80,3 +82,28 @@ def get_shap_features(
     best_n_features = best_features.iloc[:n_top]
 
     return shap_values, best_n_features
+
+
+def encoder(X: pd.DataFrame | npt.NDArray | list, reg: MLPRegressor) -> npt.NDArray:
+    """Encode data in 2D.
+
+    :param X: explanatory data
+    :param reg: trained model
+    :return: encoded array of 2D data
+    """
+    X = np.asmatrix(X)
+
+    encoder1 = X * reg.coefs_[0] + reg.intercepts_[0]
+    encoder1 = (np.exp(encoder1) - np.exp(-encoder1)) / (
+        np.exp(encoder1) + np.exp(-encoder1)
+    )
+
+    encoder2 = encoder1 * reg.coefs_[1] + reg.intercepts_[1]
+    encoder2 = (np.exp(encoder2) - np.exp(-encoder2)) / (
+        np.exp(encoder2) + np.exp(-encoder2)
+    )
+
+    latent = encoder2 * reg.coefs_[2] + reg.intercepts_[2]
+    latent = (np.exp(latent) - np.exp(-latent)) / (np.exp(latent) + np.exp(-latent))
+
+    return np.asarray(latent)
