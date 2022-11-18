@@ -1,5 +1,3 @@
-"""Main module, the only one to be executed."""
-
 from pathlib import Path
 
 import click
@@ -46,7 +44,7 @@ def plot(
 ) -> None:
     """Plot command to test.
 
-    :param: plot_graph: which graph to plot. Current choices are:
+    :param plot_graph: plot_graph: which graph to plot. Current choices are:
         - shapley: print shapley values
         - 2d: encode data in 2d and plot distribution
     :param input_path: path to csv data
@@ -64,14 +62,14 @@ def plot(
     if plot_graph == "shapley":
         # plot shapley
         logger.info("Plot shapley values.")
-        from models.plot import print_shap_values
+        from ml.plot import print_shap_values
 
         print_shap_values(X, y, save_dir)
 
     elif plot_graph == "2d":
         # plot graph
         logger.info("Plot 2D graph.")
-        from models.plot import plot_2d
+        from ml.plot import plot_2d
 
         plot_2d(X, y, save_dir)
 
