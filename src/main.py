@@ -5,7 +5,7 @@ import click
 import pandas as pd
 
 from utils.log import config_logger
-from core.checks import path_callback
+from core.checks import parse_path
 
 
 @click.group()
@@ -26,7 +26,7 @@ def main():
     "--input-path",
     required=True,
     type=click.UNPROCESSED,
-    callback=path_callback,
+    callback=parse_path,
     help="Path to csv data",
 )
 @click.option(
@@ -34,7 +34,7 @@ def main():
     "--save-dir",
     required=True,
     type=click.UNPROCESSED,
-    callback=path_callback,
+    callback=parse_path,
     help="Path where to save images",
 )
 def plot(

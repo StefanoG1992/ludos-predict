@@ -1,6 +1,7 @@
-"""Integrity checks
+"""Integrity checks.
 
-This module contains all integrity/validation checks, boolean flags, present in the script.
+This module contains all integrity/validation checks, boolean flags,
+present in the script.g
 """
 
 from pathlib import Path
@@ -13,12 +14,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def path_callback(
-        ctx: click.core.Context,  # only needed for click
-        param: click.core.Option,  # only needed for click
-        path: str | None) -> Path:
-    """
-    Callback function to validate paths.
+def parse_path(
+    ctx: click.core.Context,  # only needed for click
+    param: click.core.Option,  # only needed for click
+    path: str | None,
+) -> Path:
+    """Callback function to validate paths.
 
     Path existence is checked, if path does not exist returns error.
     None path is accepted as option; in this case, returns None.
@@ -41,4 +42,3 @@ def path_callback(
         logger.error(msg)
         raise click.BadParameter(msg)
     return path
-
