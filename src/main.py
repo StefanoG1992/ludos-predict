@@ -4,23 +4,23 @@ import click
 
 import pandas as pd
 
+from ml import plot as mlplot
+from ml import models
 from utils.log import config_logger
 from core.checks import parse_path
 
+PLOT_CHOICES = [
+    "shapley",
+    "plot_2d",
+]
+
+MODEL_CHOICES = [
+    "most_frequent",
+    "smart_random",
+]
+
 
 @click.group()
-def main():
-    pass
-
-
-@click.command
-@click.option(
-    "-p",
-    "--plot-graph",
-    required=True,
-    type=click.Choice(["shapley", "2d"]),
-    help="Which graph to plot. Implemented graphs: 'shapley', '2d'",
-)
 @click.option(
     "-i",
     "--input-path",
@@ -35,43 +35,116 @@ def main():
     required=True,
     type=click.UNPROCESSED,
     callback=parse_path,
-    help="Path where to save images",
+    help="Path where to save outputs",
 )
+@click.pass_context
+def main(ctx: click.core.Context, input_path: Path, save_dir: Path):
+    """Main function. Instance paths.
+
+    :param ctx: click context, to be shared among commands
+    :param input_path: path to csv data
+    :param save_dir: path where to save outputs
+    """
+    ctx.obj = {"input_path": input_path, "save_dir": save_dir}
+    pass
+
+
+@main.command
+@click.option(
+    "-p",
+    "--plot-graph",
+    required=True,
+    type=click.Choice(PLOT_CHOICES),
+    help=f"Which graph to plot. Implemented choices are:\n{PLOT_CHOICES}",
+)
+@click.pass_context
 def plot(
+    ctx: click.core.Context,
     plot_graph: str,
-    input_path: Path,
-    save_dir: Path,
 ) -> None:
     """Plot command to test.
 
+    :param ctx: click context inherited from main
     :param plot_graph: plot_graph: which graph to plot. Current choices are:
         - shapley: print shapley values
         - 2d: encode data in 2d and plot distribution
-    :param input_path: path to csv data
-    :param save_dir: path where to save images
     """
     # initialize logger
     logger = config_logger()
     logger.info("Saving pictures")
 
+    # initialize context variables from main
+    input_path: Path = ctx.obj["input_path"]
+    save_dir: Path = ctx.obj["save_dir"] / "plot"
+    save_dir.mkdir(exist_ok=True, parents=True)
+
     # read csv as dataframe, split as X, y
     df = pd.read_csv(input_path)
     X, y = df.iloc[:, :-1], df.iloc[:, -1].astype(int)
 
-    # choose plot
-    if plot_graph == "shapley":
-        # plot shapley
-        logger.info("Plot shapley values.")
-        from ml.plot import print_shap_values
+    # plot functions dictionary
+    # remap plot_graph to corresponding function
+    # we can execute commands in a compact way avoiding multiple ifs
+    plot_map = {
+        "shapley": mlplot.print_shap_values,
+        "2d": mlplot.plot_2d,
+    }
+    # assigning function
+    plot_func = plot_map[plot_graph]
 
-        print_shap_values(X, y, save_dir)
+    # compact plot
+    logger.info(f"Plotting. Graph choice: {plot_graph}")
+    plot_func(X, y, save_dir)
 
-    elif plot_graph == "2d":
-        # plot graph
-        logger.info("Plot 2D graph.")
-        from ml.plot import plot_2d
 
-        plot_2d(X, y, save_dir)
+@main.command
+@click.option(
+    "-m",
+    "--model",
+    required=True,
+    type=click.Choice(MODEL_CHOICES),
+    help=f"Which model to test. Implemented choices are {MODEL_CHOICES}",
+)
+@click.pass_context
+def test(
+    ctx: click.core.Context,
+    model: str,
+):
+    """Single tester for a ml model.
+
+    Use to test a model and optimize it.
+    To see model choices see the --help click function
+
+    :param ctx: click context inherited from main
+    :param model: model to be tested
+    :return:
+    """
+    # initialize logger
+    logger = config_logger()
+    logger.info("Testing a single model")
+
+    # initialize context variables from main
+    input_path: Path = ctx.obj["input_path"]
+    save_dir: Path = ctx.obj["save_dir"] / "outputs"
+    save_dir.mkdir(exist_ok=True, parents=True)
+
+    # read csv as dataframe, split as X, y
+    df = pd.read_csv(input_path)
+    X, y = df.iloc[:, :-1], df.iloc[:, -1].astype(int)
+
+    # model dictionary
+    # remap plot_graph to corresponding class
+    # we can execute commands in a compact way avoiding multiple ifs
+    mdls = {
+        "most_frequent": models.MostFrequentClassifier,
+        "smart_random": models.SmartRandomClassifier,
+    }
+
+    # initialize model
+    mdl = mdls[model]()
+
+    mdl.build()
+    mdl.train(X, y)  # still to split train, test
 
 
 if __name__ == "__main__":
