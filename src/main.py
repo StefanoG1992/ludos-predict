@@ -6,6 +6,9 @@ import pandas as pd
 
 from ml import plot as mlplot
 from ml import models
+
+from ml.base import Model
+
 from utils.log import config_logger
 from core.checks import parse_path
 
@@ -14,10 +17,7 @@ PLOT_CHOICES = [
     "plot_2d",
 ]
 
-MODEL_CHOICES = [
-    "most_frequent",
-    "smart_random",
-]
+MODEL_CHOICES = ["most_frequent", "smart_random", "logistic"]
 
 
 @click.group()
@@ -100,15 +100,15 @@ def plot(
 @main.command
 @click.option(
     "-m",
-    "--model",
+    "--model-name",
     required=True,
     type=click.Choice(MODEL_CHOICES),
     help=f"Which model to test. Implemented choices are {MODEL_CHOICES}",
 )
 @click.pass_context
-def test(
+def execute(
     ctx: click.core.Context,
-    model: str,
+    model_name: str,
 ):
     """Single tester for a ml model.
 
@@ -116,37 +116,53 @@ def test(
     To see model choices see the --help click function
 
     :param ctx: click context inherited from main
-    :param model: model to be tested
+    :param model_name: model to be tested
     :return:
     """
     # initialize logger
     logger = config_logger()
-    logger.info("Testing a single model")
+    logger.info("Execution step.")
 
     # initialize context variables from main
     input_path: Path = ctx.obj["input_path"]
     save_dir: Path = ctx.obj["save_dir"] / "outputs"
-    save_dir.mkdir(exist_ok=True, parents=True)
+    save_dir.mkdir(exist_ok=True)
 
+    logger.info(f"Reading data from {input_path}")
     # read csv as dataframe, split as X, y
     df = pd.read_csv(input_path)
     X, y = df.iloc[:, :-1], df.iloc[:, -1].astype(int)
 
+    logger.info("Data instanced. Initializing model.")
     # model dictionary
     # remap plot_graph to corresponding class
     # we can execute commands in a compact way avoiding multiple ifs
     mdls = {
         "most_frequent": models.MostFrequentClassifier,
         "smart_random": models.SmartRandomClassifier,
+        "logistic": models.SimpleRegressionClassifier,
     }
 
     # initialize model
-    mdl = mdls[model]()
+    model: Model = mdls[model_name]()
+    logger.info(f"Model {model} initialized. Building:")
 
-    mdl.build()
-    mdl.fit(X, y)  # still to split fit, test
+    # build model - define its internal structure
+    model.build()
+    logger.info("Building step done. Getting scores:")
+
+    # get model scores - model fit is done internally
+    scores: dict = model.get_scores(X, y)
+
+    logger.info("Scores computed. Saving as csv:")
+    save_path = save_dir / f"{model}.csv"
+
+    pd.Series(scores).to_csv(save_path, sep=";")
+    logger.info(f"Scores saved to path {save_path}")
+    logger.info("Finished")
 
 
 if __name__ == "__main__":
     main.add_command(plot)
+    main.add_command(execute)
     main()

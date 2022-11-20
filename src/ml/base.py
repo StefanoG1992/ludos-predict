@@ -13,19 +13,36 @@ Following methods are not mandatory instead:
 - optimize: performing model parameters optimization
 """
 
+import logging
+
+import numpy as np
 import pandas as pd
 
 from abc import ABC, abstractmethod
+from sklearn.model_selection import cross_val_score
+
+from typing import TypeVar
+
+# get logger if any
+logger = logging.getLogger(__name__)
 
 
 class BaseModel(ABC):
     """Abstract predictive model."""
 
+    def __init__(self):
+        self.mdl = None
+        self.params = None
+
+    def __str__(self):
+        return "Abstract model class"
+
     @abstractmethod
     def build(self) -> None:
         """Building model structure.
 
-        Initialize self.mdl
+        This step defines the model structure by instancing the model
+        object in self.mdl.
         """
         raise NotImplementedError("Missing building method")
 
@@ -39,20 +56,42 @@ class BaseModel(ABC):
         raise NotImplementedError("Missing training method")
 
     @abstractmethod
-    def predict(self, y: pd.Series) -> pd.Series:
+    def predict(self, X: pd.DataFrame) -> pd.Series:
         """Prediction step.
 
-        :param y: test response
+        :param X: explantory data to predict
         :return: predicted response
         """
         raise NotImplementedError("Missing prediction method")
 
-    def crossval(self):
-        """Cross validation step.
+    def run(self, X: pd.DataFrame, y: pd.Series) -> None:
+        """Executes build and fit methods."""
+        self.build()
+        self.fit(X, y)
 
-        Do not raise Exception is not implemented
-        """
-        pass
+    def get_scores(
+        self, X: pd.DataFrame, y: pd.Series, cv: int = 5
+    ) -> dict[str, np.float64]:
+        """Cross validation step."""
+        # check if self.mdl is instanced - if not, pass
+        # define metrics dictionary
+        scores: dict = {}
+
+        logger.info(f"Compute metrics for {self}")
+
+        # accuracy
+        scores["accuracy"] = np.mean(
+            cross_val_score(estimator=self.mdl, X=X, y=y, cv=cv, scoring="accuracy")
+        )
+
+        # balanced accuracy
+        scores["balanced_accuracy"] = np.mean(
+            cross_val_score(
+                estimator=self.mdl, X=X, y=y, cv=cv, scoring="balanced_accuracy"
+            )
+        )
+
+        return scores
 
     def optimize(self):
         """Optimization step.
@@ -60,3 +99,7 @@ class BaseModel(ABC):
         Do not raise Exception is not implemented
         """
         pass
+
+
+# define class model
+Model = TypeVar("Model", bound=BaseModel)
