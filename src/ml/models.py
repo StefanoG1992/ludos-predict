@@ -1,7 +1,12 @@
-"""Models module.
+"""Machine learning module.
 
-This module defines all models used in the challenge. Models are defined
-as child classes of an BaseModel class
+This module defines all models used in the challenge.
+Models are defined through an abstract BaseModel class which implements basic ml
+methods (.fit, .predict, .evaluate) unless there is need of overriding.
+See module ml.base for details.
+
+The model-specific method is .build, which defines its structure and instances
+it on self.mdl.
 """
 
 import random
@@ -39,7 +44,7 @@ class MostFrequentClassifier(BaseModel):
         y_pred = pd.Series(self.most_frequent_class)
         return y_pred
 
-    def get_scores(self, X: pd.DataFrame, y: pd.Series, cv: int = 5):
+    def evaluate(self, X: pd.DataFrame, y: pd.Series, cv: int = 5):
         """Cross validation not implemented for this classifier."""
         return None
 
@@ -78,7 +83,7 @@ class SmartRandomClassifier(BaseModel):
         y_pred = pd.Series(extractions)
         return y_pred
 
-    def get_scores(self, X: pd.DataFrame, y: pd.Series, cv: int = 5):
+    def evaluate(self, X: pd.DataFrame, y: pd.Series, cv: int = 5):
         """Cross validation not implemented for this classifier."""
         return None
 
@@ -103,10 +108,3 @@ class SimpleRegressionClassifier(BaseModel):
                 ("predictor", LogisticRegression(penalty="l2")),
             ]
         )
-
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
-        self.mdl.fit(X, y)
-
-    def predict(self, X_test: pd.DataFrame) -> pd.Series:
-        y_pred = self.mdl.predict(X_test)
-        return y_pred

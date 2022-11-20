@@ -1,17 +1,13 @@
-"""Base model.
+"""Abstract class model.
 
 Contain a base model class to be used to build predictive models.
-A predictive model must contain following methods:
+An abstract model must contain following methods:
+- .fit: fit training data
+- .predict: predict test data
+- .evaluate: evaluate the model
 
-Abstract methods
-- build: define model structure (e.g. simple class, pipeline, keras layers...)
-The final model is expected to be instanced as self.model
-- fit: training the model. Require training explanatory data X and response y
-- predict: predicting values. Require test response y
-
-Following methods are not mandatory instead:
-- get_scores: fit the model via cross-validation and compute main metrics
-Note, the model most get built before
+The only abstract method is .build, which defines the model structure and
+instances it on self.mdl. This depends on specific model
 """
 
 import logging
@@ -48,31 +44,34 @@ class BaseModel(ABC):
         """
         raise NotImplementedError("Missing building method")
 
-    @abstractmethod
     def fit(self, X_train: pd.DataFrame, y_train: pd.Series) -> None:
         """Training the model.
 
         This step trains the model with training data.
+        The training logic mimics scikit-learn .fit logic.
+        If the model has a different logic, it should be overriden
         :param X_train: training data
         :param y_train: training response
         """
-        raise NotImplementedError("Missing training method")
+        self.mdl.fit(X_train, y_train)
 
-    @abstractmethod
     def predict(self, X_test: pd.DataFrame) -> pd.Series:
         """Prediction step.
 
+        The prediction logic mimics scikit-learn .predict logic.
+        If the model has a different logic, it should be overriden
         :param X_test: explanatory data to predict
         :return: predicted response
         """
-        raise NotImplementedError("Missing prediction method")
+        y_pred = self.mdl.predict(X_test)
+        return y_pred
 
     def run(self, X: pd.DataFrame, y: pd.Series) -> None:
         """Executes build and fit methods."""
         self.build()
         self.fit(X, y)
 
-    def get_scores(
+    def evaluate(
         self, X: pd.DataFrame, y: pd.Series, cv: int = 5
     ) -> dict[str, np.float64]:
         """Evaluate the model via cross validation over several metrics.

@@ -152,7 +152,7 @@ def execute(
     logger.info("Building step done. Getting scores:")
 
     # get model scores - model fit is done internally
-    scores: dict = model.get_scores(X, y)
+    scores: dict = model.evaluate(X, y)
 
     logger.info("Scores computed. Saving as csv:")
     save_path = save_dir / f"{model}.csv"
