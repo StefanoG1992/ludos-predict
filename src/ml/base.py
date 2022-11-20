@@ -1,6 +1,6 @@
 """Base model.
 
-Contain a base model class to be used for predictive purposes.
+Contain a base model class to be used to build predictive models.
 A predictive model must contain following methods:
 
 Abstract methods
@@ -97,14 +97,12 @@ class BaseModel(ABC):
 
         # accuracy
         scores["accuracy"] = np.mean(
-            cross_val_score(estimator=self.mdl, X=X, y=y, cv=cv, scoring="accuracy")
+            cross_val_score(self.mdl, X=X, y=y, cv=cv, scoring="accuracy")
         )
 
         # balanced accuracy
         scores["balanced_accuracy"] = np.mean(
-            cross_val_score(
-                estimator=self.mdl, X=X, y=y, cv=cv, scoring="balanced_accuracy"
-            )
+            cross_val_score(self.mdl, X=X, y=y, cv=cv, scoring="balanced_accuracy")
         )
 
         return scores
