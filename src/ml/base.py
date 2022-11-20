@@ -3,14 +3,15 @@
 Contain a base model class to be used for predictive purposes.
 A predictive model must contain following methods:
 
+Abstract methods
 - build: define model structure (e.g. simple class, pipeline, keras layers...)
 The final model is expected to be instanced as self.model
 - fit: training the model. Require training explanatory data X and response y
 - predict: predicting values. Require test response y
 
 Following methods are not mandatory instead:
-- crossval: perform cross validation check of the model
-- optimize: performing model parameters optimization
+- get_scores: fit the model via cross-validation and compute main metrics
+Note, the model most get built before
 """
 
 import logging
@@ -42,24 +43,26 @@ class BaseModel(ABC):
         """Building model structure.
 
         This step defines the model structure by instancing the model
-        object in self.mdl.
+        object in self.mdl. Model parameters are encoded in the
+        function.
         """
         raise NotImplementedError("Missing building method")
 
     @abstractmethod
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
+    def fit(self, X_train: pd.DataFrame, y_train: pd.Series) -> None:
         """Training the model.
 
-        :param X: training data
-        :param y: training response
+        This step trains the model with training data.
+        :param X_train: training data
+        :param y_train: training response
         """
         raise NotImplementedError("Missing training method")
 
     @abstractmethod
-    def predict(self, X: pd.DataFrame) -> pd.Series:
+    def predict(self, X_test: pd.DataFrame) -> pd.Series:
         """Prediction step.
 
-        :param X: explantory data to predict
+        :param X_test: explanatory data to predict
         :return: predicted response
         """
         raise NotImplementedError("Missing prediction method")
@@ -72,8 +75,21 @@ class BaseModel(ABC):
     def get_scores(
         self, X: pd.DataFrame, y: pd.Series, cv: int = 5
     ) -> dict[str, np.float64]:
-        """Cross validation step."""
-        # check if self.mdl is instanced - if not, pass
+        """Evaluate the model via cross validation over several metrics.
+
+        Train-test split is performed during cross validation.
+        Output is a dictionary containing the results for each
+        metric. As cross validation returns a result tuple for each run,
+        we take the average over the runs.
+
+        :param X: explanatory data
+        :param y: response
+        :param cv: number of folds. Default is 5
+        :return: Metrics results {metric_name: avg_metric_result}
+        """
+        # check if self.mdl is instanced - if not, exit the function
+        assert self.mdl is not None, "Model not built"
+
         # define metrics dictionary
         scores: dict = {}
 

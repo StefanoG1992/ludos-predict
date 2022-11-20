@@ -40,7 +40,8 @@ class MostFrequentClassifier(BaseModel):
         return y_pred
 
     def get_scores(self, X: pd.DataFrame, y: pd.Series, cv: int = 5):
-        pass
+        """Cross validation not implemented for this classifier."""
+        return None
 
 
 class SmartRandomClassifier(BaseModel):
@@ -54,6 +55,7 @@ class SmartRandomClassifier(BaseModel):
         super().__init__()
         self.class_list = None
         self.class_weights = None
+        self._estimator_type = "classifier"  # align with other models
 
     def __str__(self):
         return "SmartRandomClassifier"
@@ -77,11 +79,15 @@ class SmartRandomClassifier(BaseModel):
         return y_pred
 
     def get_scores(self, X: pd.DataFrame, y: pd.Series, cv: int = 5):
-        pass
+        """Cross validation not implemented for this classifier."""
+        return None
 
 
 class SimpleRegressionClassifier(BaseModel):
-    """Simple regression classifier."""
+    """Simple regression classifier.
+
+    This model performs a simple scaled logistic regression.
+    """
 
     def __init__(self):
         super().__init__()
@@ -101,6 +107,6 @@ class SimpleRegressionClassifier(BaseModel):
     def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
         self.mdl.fit(X, y)
 
-    def predict(self, X: pd.DataFrame) -> pd.Series:
-        y_pred = self.mdl.predict(X)
+    def predict(self, X_test: pd.DataFrame) -> pd.Series:
+        y_pred = self.mdl.predict(X_test)
         return y_pred
