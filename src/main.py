@@ -144,7 +144,7 @@ def test(
     mdl = mdls[model]()
 
     mdl.build()
-    mdl.train(X, y)  # still to split train, test
+    mdl.fit(X, y)  # still to split fit, test
 
 
 if __name__ == "__main__":

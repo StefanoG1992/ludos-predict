@@ -129,7 +129,7 @@ def plot_2d(
 
     title = "2D encoded data"
 
-    # creating train test split
+    # creating fit test split
     # y_train not used
     X_train, X_test, _, y_test = train_test_split(
         X,
@@ -161,7 +161,7 @@ def plot_2d(
     )
 
     logger.info("Fitting model...")
-    reg.fit(X_train_scl, X_train_scl)  # for autoencoders, same matrix is train & test
+    reg.fit(X_train_scl, X_train_scl)  # for autoencoders, same matrix is fit & test
 
     # due to MinMax scaling & precision linearity, no need to inverse_transform
     avg_precision = autoencode_precision(X_test_scl, reg)

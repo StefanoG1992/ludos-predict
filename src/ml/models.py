@@ -16,23 +16,19 @@ class MostFrequentClassifier(BaseModel):
 
     def __init__(self):
         super().__init__()
-        self.X = None
-        self.y = None
         self.most_frequent_class = None
+        self._estimator_type = "classifier"  # align with other models
 
     def build(self):
         """Step not needed for this classifier."""
         pass
 
-    def train(self, X: pd.DataFrame, y: pd.Series) -> None:
+    def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
         assert len(y), "No values passed"
         self.most_frequent_class = y.mode().values[0]
 
     def predict(self, y: pd.Series) -> pd.Series:
-        y_pred = pd.DataFrame(
-            self.most_frequent_class,
-            index=self.X.index,
-        )
+        y_pred = pd.Series(self.most_frequent_class)
         return y_pred
 
 
@@ -51,7 +47,7 @@ class SmartRandomClassifier(BaseModel):
         """Step not needed for this classifier."""
         pass
 
-    def train(self, X: pd.DataFrame, y: pd.Series) -> None:
+    def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
         assert len(y), "No values passed"
 
         # Store  class freq
