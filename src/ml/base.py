@@ -15,8 +15,14 @@ import logging
 import numpy as np
 import pandas as pd
 
+import core.checks as check
+
 from abc import ABC, abstractmethod
+
 from sklearn.model_selection import cross_val_score
+from sklearn.metrics import make_scorer
+
+from ml.scores import f_score, recall
 
 from typing import TypeVar
 
@@ -96,13 +102,53 @@ class BaseModel(ABC):
 
         # accuracy
         scores["accuracy"] = np.mean(
-            cross_val_score(self.mdl, X=X, y=y, cv=cv, scoring="accuracy")
-        )
+            cross_val_score(estimator=self.mdl, X=X, y=y, cv=cv, scoring="accuracy")
+        ).round(4)
 
         # balanced accuracy
         scores["balanced_accuracy"] = np.mean(
-            cross_val_score(self.mdl, X=X, y=y, cv=cv, scoring="balanced_accuracy")
-        )
+            cross_val_score(
+                estimator=self.mdl, X=X, y=y, cv=cv, scoring="balanced_accuracy"
+            )
+        ).round(4)
+
+        # check that y has integer labels
+        check.response_labels_are_int(y)
+
+        # compute specific response class scores
+        for i in y.unique():
+            # compute f1 score
+            scores[f"f1_score_label_{i}"] = np.mean(
+                cross_val_score(
+                    estimator=self.mdl,
+                    X=X,
+                    y=y,
+                    cv=cv,
+                    scoring=make_scorer(f_score, beta=1.0, label=i),
+                )
+            ).round(4)
+
+            # compute f2 score
+            scores[f"f2_score_label_{i}"] = np.mean(
+                cross_val_score(
+                    estimator=self.mdl,
+                    X=X,
+                    y=y,
+                    cv=cv,
+                    scoring=make_scorer(f_score, beta=2.0, label=i),
+                )
+            ).round(4)
+
+            # compute recall
+            scores[f"recall_label_{i}"] = np.mean(
+                cross_val_score(
+                    estimator=self.mdl,
+                    X=X,
+                    y=y,
+                    cv=cv,
+                    scoring=make_scorer(recall, label=i),
+                )
+            ).round(4)
 
         return scores
 

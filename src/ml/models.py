@@ -1,6 +1,6 @@
 """Machine learning module.
 
-This module defines all models used in the challenge.
+Define all models used in the challenge.
 Models are defined through an abstract BaseModel class which implements basic ml
 methods (.fit, .predict, .evaluate) unless there is need of overriding.
 See module ml.base for details.

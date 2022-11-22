@@ -1,6 +1,6 @@
 """Utils module.
 
-This module utility functions to support ml models
+This module stores utility functions to support ml models
 """
 
 import logging
