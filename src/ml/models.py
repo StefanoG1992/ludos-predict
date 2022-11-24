@@ -13,10 +13,13 @@ import random
 
 import pandas as pd
 
+from ml import scores as sc
+
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 
+from sklearn.metrics import accuracy_score
 
 from ml.base import BaseModel
 
@@ -41,12 +44,39 @@ class MostFrequentClassifier(BaseModel):
         self.most_frequent_class = y.mode().values[0]
 
     def predict(self, y: pd.Series) -> pd.Series:
-        y_pred = pd.Series(self.most_frequent_class)
+        y_pred = pd.Series([self.most_frequent_class for _ in range(len(y))])
         return y_pred
 
     def evaluate(self, X: pd.DataFrame, y: pd.Series, cv: int = 5):
-        """Cross validation not implemented for this classifier."""
-        return None
+        """Evaluation step.
+
+        Cross validation not implemented for this classifier.
+        """
+        # build defined this way for this classifier
+        self.fit(X, y)
+
+        # predict values
+        y_pred = self.predict(y)
+
+        # add scores
+        scores: dict = {"accuracy": accuracy_score(y, y_pred)}
+
+        # add label specific scores
+        for i in y.unique():
+            # f1 score
+            scores[f"f1_score_label_{i}"] = sc.f_score(y, y_pred, label=i, beta=1.0)
+
+            # f2 score
+            scores[f"f2_score_label_{i}"] = sc.f_score(y, y_pred, label=i, beta=2.0)
+
+            # recall
+            scores[f"recall_label_{i}"] = sc.recall(
+                y,
+                y_pred,
+                label=i,
+            )
+
+        return scores
 
 
 class SmartRandomClassifier(BaseModel):
@@ -84,8 +114,35 @@ class SmartRandomClassifier(BaseModel):
         return y_pred
 
     def evaluate(self, X: pd.DataFrame, y: pd.Series, cv: int = 5):
-        """Cross validation not implemented for this classifier."""
-        return None
+        """Evaluation step.
+
+        Cross validation not implemented for this classifier.
+        """
+        # build defined this way for this classifier
+        self.fit(X, y)
+
+        # predict values
+        y_pred = self.predict(y)
+
+        # add scores
+        scores: dict = {"accuracy": accuracy_score(y, y_pred)}
+
+        # add label specific scores
+        for i in y.unique():
+            # f1 score
+            scores[f"f1_score_label_{i}"] = sc.f_score(y, y_pred, label=i, beta=1.0)
+
+            # f2 score
+            scores[f"f2_score_label_{i}"] = sc.f_score(y, y_pred, label=i, beta=2.0)
+
+            # recall
+            scores[f"recall_label_{i}"] = sc.recall(
+                y,
+                y_pred,
+                label=i,
+            )
+
+        return scores
 
 
 class SimpleRegressionClassifier(BaseModel):
@@ -96,15 +153,17 @@ class SimpleRegressionClassifier(BaseModel):
 
     def __init__(self):
         super().__init__()
-        self.mdl = None
 
     def __str__(self):
         return "SimpleRegressionClassifier"
 
     def build(self):
-        self.mdl = Pipeline(
+        self._model = Pipeline(
             [
                 ("scaler", StandardScaler()),
-                ("predictor", LogisticRegression(penalty="l2")),
+                (
+                    "predictor",
+                    LogisticRegression(penalty="l2", class_weight="balanced"),
+                ),
             ]
         )

@@ -10,6 +10,8 @@ from ml import models
 
 from ml.base import Model
 
+from ml.utils import load_params_for_optim
+
 from utils.log import config_logger
 
 _PLOT_CHOICES = [
@@ -17,7 +19,11 @@ _PLOT_CHOICES = [
     "plot_2d",
 ]
 
-_MODEL_CHOICES = ["most_frequent", "smart_random", "logistic"]
+_MODEL_CHOICES = [
+    "most_frequent",
+    "smart_random",
+    "logistic",
+]
 
 
 @click.group()
@@ -103,10 +109,19 @@ def plot(
     type=click.Choice(_MODEL_CHOICES),
     help=f"Which model to test. Implemented choices are {_MODEL_CHOICES}",
 )
+@click.option(
+    "-O",
+    "--optimize",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    help="Boolean flag. If passed, optimize the method through a grid",
+)
 @click.pass_context
-def execute(
+def test(
     ctx: click.core.Context,
     model_name: str,
+    optimize: bool,
 ):
     """Single tester for a ml model.
 
@@ -115,7 +130,7 @@ def execute(
 
     :param ctx: click context inherited from main
     :param model_name: model to be tested
-    :return:
+    :return: None
     """
     # initialize logger
     logger = config_logger()
@@ -139,7 +154,6 @@ def execute(
 
     logger.info("Data instanced. Initializing model.")
     # model dictionary
-    # remap plot_graph to corresponding class
     # we can execute commands in a compact way avoiding multiple ifs
     mdls = {
         "most_frequent": models.MostFrequentClassifier,
@@ -153,6 +167,17 @@ def execute(
 
     # build model - define its internal structure
     model.build()
+
+    if optimize:
+        logger.info("Optimizing the model:")
+        # load list of params
+        params: dict[str, dict[str, list]] = load_params_for_optim()
+
+        # define params for specific model
+        model_params = params[model_name]
+
+        # optimize
+        model.optimize(X, y, model_params)
     logger.info("Building step done. Getting scores:")
 
     # get model scores - model fit is done internally
@@ -170,5 +195,5 @@ def execute(
 
 if __name__ == "__main__":
     main.add_command(plot)
-    main.add_command(execute)
+    main.add_command(test)
     main()
