@@ -76,9 +76,7 @@ class BaseModel(ABC):
         self.build()
         self.fit(X, y)
 
-    def evaluate(
-        self, X: pd.DataFrame, y: pd.Series, cv: int = 5
-    ) -> dict[str, np.float64]:
+    def evaluate(self, X: pd.DataFrame, y: pd.Series, cv: int = 5) -> dict[str, float]:
         """Evaluate the model via cross validation over several metrics.
 
         Train-test split is performed during cross validation.
@@ -153,6 +151,9 @@ class BaseModel(ABC):
                     scoring=make_scorer(recall, label=i),
                 )
             ).round(4)
+
+        # float conversion - needed for yaml.dump
+        scores = {k: float(v) for k, v in scores.items()}
 
         return scores
 

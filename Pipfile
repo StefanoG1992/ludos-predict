@@ -13,8 +13,7 @@ imblearn = "*"
 catboost = "*"
 click="*"
 shap = "*"
-black = "*"
-pre-commit = "*"
+PyYAML = "*"
 
 [dev-packages]
 black = "*"

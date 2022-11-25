@@ -1,0 +1,13 @@
+# parameters for model optimization
+logistic:
+  predictor__penalty:
+    - l2
+  predictor__max_iter:
+    - 500
+  predictor__class_weight:
+    - null
+    - balanced
+  predictor__C:
+    - 0.5
+    - 1
+    - 1.5

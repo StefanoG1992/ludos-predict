@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import click
-import json
+import yaml
 
 import pandas as pd
 
@@ -9,8 +9,6 @@ from ml import plot as mlplot
 from ml import models
 
 from ml.base import Model
-
-from ml.utils import load_params_for_optim
 
 from utils.log import config_logger
 
@@ -170,8 +168,16 @@ def test(
 
     if optimize:
         logger.info("Optimizing the model:")
-        # load list of params
-        params: dict[str, dict[str, list]] = load_params_for_optim()
+        # find root directory
+        root_dir = Path(__file__).parent.parent
+        params_path = root_dir / "optim-params.yaml"
+        assert params_path.exists(), "optim-params.yaml not found in root"
+
+        # load params
+        with open(params_path, "rt") as params_file:
+            params: dict[str, dict[str, list]] = yaml.load(
+                params_file, Loader=yaml.FullLoader
+            )
 
         # define params for specific model
         model_params = params[model_name]
@@ -184,10 +190,10 @@ def test(
     scores: dict = model.evaluate(X, y)
 
     logger.info("Scores computed. Saving as csv:")
-    save_path = save_dir / f"{model}.json"
+    save_path = save_dir / f"{model}.yaml"
 
     with open(save_path, "wt") as f:
-        json.dump(scores, f, indent=True)
+        yaml.dump(scores, f)
 
     logger.info(f"Scores saved to path {save_path}")
     logger.info("Finished")

@@ -64,7 +64,7 @@ def get_shap_features(
     shap_values: list = explainer.shap_values(X_train_scl)
 
     # generate feature importances df
-    shap_array = np.array(shap_values)  # shape = (# classes, # data, # features)
+    shap_array = np.array(shap_values)  # shape = # classes, # data, # features
     logger.debug(f"Shapley coefficients array has shape: {shap_array.shape}")
 
     # retrieve absolute importance
@@ -128,19 +128,3 @@ def autoencode_precision(X: npt.NDArray, reg: MLPRegressor) -> np.float64:
 
     # precision = 1 - error
     return 1 - avg_error_pctg
-
-
-def load_params_for_optim() -> dict[str, dict[str, list]]:
-    """Load model parameters for optimization.
-
-    Used only for testing purposes
-    """
-    params = {
-        "logistic": {
-            "predictor__C": [0.5, 1.0, 1.5],  # regularization coeff
-            "predictor__penalty": ["l2"],  # l1-l2 weighted
-            "predictor__max_iter": [500],
-            "predictor__class_weight": ["balanced"],
-        }
-    }
-    return params
