@@ -163,7 +163,11 @@ class SimpleRegressionClassifier(BaseModel):
                 ("scaler", StandardScaler()),
                 (
                     "predictor",
-                    LogisticRegression(penalty="l2", class_weight="balanced"),
+                    LogisticRegression(
+                        penalty="l2",
+                        class_weight="balanced",
+                        max_iter=300,
+                    ),
                 ),
             ]
         )

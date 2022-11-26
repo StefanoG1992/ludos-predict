@@ -35,6 +35,12 @@ class BaseModel(ABC):
 
     def __init__(self):
         self._model = None
+        self._scorers = [
+            "accuracy",
+            "f1_score",
+            "f2_score",
+            "recall",
+        ]
 
     def __str__(self):
         return "Abstract model class"
@@ -158,7 +164,12 @@ class BaseModel(ABC):
         return scores
 
     def optimize(
-        self, X: pd.DataFrame, y: pd.Series, param_grid: dict[str, list], cv: int = 5
+        self,
+        X: pd.DataFrame,
+        y: pd.Series,
+        param_grid: dict[str, list],
+        scoring: str | None,
+        cv: int = 5,
     ):
         """Optimization step.
 
@@ -176,6 +187,7 @@ class BaseModel(ABC):
         :param param_grid: parameters dictionary. Must be a dictionary with
         structure {param_name: [param_val_0, param_val_1, ...]}
         or {param_name: math.distribution}
+        :param scoring: scoring metric
         :param cv: cross validation n-folds. Default is 5
 
         :return: None. The self._model is overriden with optim parameters
@@ -184,11 +196,22 @@ class BaseModel(ABC):
         # TODO change assert
         assert self._model is not None, "Model not built"
 
+        if scoring not in self._scorers:
+            raise NotImplementedError("Score not implemented")
+
+        scoring_map = {
+            "accuracy": None,  # None is default for GridSearchCV accuracy,
+            "f1_score": make_scorer(f_score, beta=1.0),
+            "f2_score": make_scorer(f_score, beta=2.0),
+            "recall": make_scorer(recall),
+        }
+
         clf = GridSearchCV(
             estimator=self._model,
             param_grid=param_grid,
             cv=cv,
             refit=True,
+            scoring=scoring_map[scoring],
         )
 
         clf.fit(X, y)

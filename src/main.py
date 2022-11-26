@@ -23,6 +23,8 @@ _MODEL_CHOICES = [
     "logistic",
 ]
 
+_SCORE_CHOICES = ["f1_score", "f2_score", "recall", "accuracy"]
+
 
 @click.group()
 @click.option(
@@ -115,6 +117,14 @@ def plot(
     default=False,
     help="Boolean flag. If passed, optimize the method through a grid",
 )
+@click.option(
+    "-s",
+    "--scoring",
+    show_default=True,
+    type=click.Choice(_SCORE_CHOICES),
+    default="f1_score",
+    help="Boolean flag. If passed, optimize the method through a grid",
+)
 @click.pass_context
 def test(
     ctx: click.core.Context,
@@ -183,7 +193,7 @@ def test(
         model_params = params[model_name]
 
         # optimize
-        model.optimize(X, y, model_params)
+        model.optimize(X, y, model_params, "f1_score")
     logger.info("Building step done. Getting scores:")
 
     # get model scores - model fit is done internally
