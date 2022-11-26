@@ -9,23 +9,25 @@ import pandas as pd
 from ml import plot as mlplot
 from ml import models
 
-from ml.base import Model
+from ml.base import Model, ModelName, Score
 from ml.utils import get_shap_features
+
+from core import checks as check
 
 from utils.log import config_logger
 
-_PLOT_CHOICES = [
+_PLOT_CHOICES: list[str] = [
     "shapley",
     "plot_2d",
 ]
 
-_MODEL_CHOICES = [
+_MODEL_CHOICES: list[ModelName] = [
     "most_frequent",
     "smart_random",
     "logistic",
 ]
 
-_SCORE_CHOICES = [
+_SCORE_CHOICES: list[Score] = [
     "f1_score",
     "f2_score",
     "recall",
@@ -55,7 +57,7 @@ _SCORE_CHOICES = [
     show_default=True,
     default=False,
     help="""Boolean flag. If passed, use only top 10 explanatory columns.
-    Explanability is computed via shapley algorithm, see ml.utils module.
+    Explainability is computed via shapley algorithm, see ml.utils module.
     """,
 )
 @click.option(
@@ -237,7 +239,7 @@ def test(
 
         # load params
         with open(params_path, "rt") as params_file:
-            params: dict[str, dict[str, list]] = yaml.load(
+            params: dict[ModelName, dict[str, list]] = yaml.load(
                 params_file, Loader=yaml.FullLoader
             )
 
@@ -249,9 +251,9 @@ def test(
     logger.info("Building step done. Getting scores:")
 
     # get model scores - model fit is done internally
-    scores: dict = model.evaluate(X, y)
+    scores: dict[Score, float] = model.evaluate(X, y)
 
-    logger.info("Scores computed. Saving as csv:")
+    logger.info("Scores computed. Saving as yaml:")
     save_path = save_dir / f"{model}.yaml"
 
     with open(save_path, "wt") as f:
@@ -261,7 +263,73 @@ def test(
     logger.info("Finished")
 
 
+@main.command
+@click.pass_context
+def challenge(ctx: click.core.Context):
+    """Perform a challenge between all non-trivial models in scope.
+
+    Instance non-trivial models (all except SmartRandom, MostFrequent) and
+    compute f1, f2 score, recall and accuracy for all of them.
+    Results are modelled as dictionary with structure
+    {metric_1: {model_1: value_1, ... model_n: value_n}, metric_2: {...}}
+    and saved as yaml in output dir
+    """
+    # initialize logger
+    logger = logging.getLogger(__name__)
+    logger.info("Command test: model challenge.")
+
+    # initialize context variables from main
+    save_dir: Path = ctx.obj["save_dir"] / "outputs"
+    save_dir.mkdir(exist_ok=True, parents=False)  # parent must exist
+
+    X: pd.DataFrame = ctx.obj["X"]
+    y: pd.Series = ctx.obj["y"]
+
+    logger.info("Data instanced. Starting challenge:")
+
+    # better hard-coded dict than other solutions as eval, getattr...
+    all_models: dict[str, Model] = {
+        "logistic": models.SimpleRegressionClassifier(),  # already instanced
+    }
+
+    # define global scores as dictionaries {model_name: model_scores}}}
+    all_scores: dict[ModelName, dict[Score, float]] = {}
+
+    logger.info("Challenge finished. Saving results")
+
+    for model_name, model in all_models.items():
+        model.build()
+        model_scores: dict[Score, float] = model.evaluate(X, y)
+        all_scores[model_name] = model_scores
+
+    # check model scores are proper
+    check.models_scores(all_scores)
+
+    # rearrange all_scores to have structure {score: {model_1: metric_1 ...}}
+    # get scores_list: if checks are passed, one random list is ok
+    first_model_name: ModelName = list(all_scores.keys())[0]
+    scores_list: list[Score] = list(all_scores[first_model_name].keys())
+
+    challenge_result: dict[Score, dict[ModelName, float]] = {
+        score: {
+            mdl_name: all_scores[mdl_name][score]
+            for mdl_name in all_scores
+            if score in all_scores[mdl_name]
+        }
+        for score in scores_list
+    }
+
+    save_path = save_dir / "challenge_result.yaml"
+
+    with open(save_path, "wt") as f:
+        yaml.dump(challenge_result, f)
+
+    logger.info(f"Change results saved to path {save_path}")
+    logger.info("Finished.")
+
+
 if __name__ == "__main__":
     main.add_command(plot)
     main.add_command(test)
+    main.add_command(challenge)
     main()

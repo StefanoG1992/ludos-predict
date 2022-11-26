@@ -29,6 +29,9 @@ from typing import TypeVar
 # get logger if any
 logger = logging.getLogger(__name__)
 
+# define score name
+Score = TypeVar("Score", bound=str)
+
 
 class BaseModel(ABC):
     """Abstract predictive model."""
@@ -95,9 +98,9 @@ class BaseModel(ABC):
         :param cv: number of folds. Default is 5
         :return: Metrics results {metric_name: avg_metric_result}
         """
-        # check if self.mdl is instanced - if not, exit the function
-        # TODO change assert
-        assert self._model is not None, "Model not built"
+        # model must be already built
+        if self._model is None:
+            raise NotImplementedError("Model not built")
 
         # define metrics dictionary
         scores: dict = {}
@@ -124,9 +127,16 @@ class BaseModel(ABC):
         check.response_labels_are_int(y)
 
         # compute specific response class scores
-        for i in y.unique():
+        # Passing None computes the average
+        labels = list(y.unique()) + [None]
+        for i in labels:
             # compute f1 score
-            scores[f"f1_score_label_{i}"] = np.mean(
+            # order names
+            if i is not None:
+                label_name = f"label_{i}"
+            else:
+                label_name = "avg"
+            scores[f"f1_score_{label_name}"] = np.mean(
                 cross_val_score(
                     estimator=self._model,
                     X=X,
@@ -137,7 +147,7 @@ class BaseModel(ABC):
             ).round(4)
 
             # compute f2 score
-            scores[f"f2_score_label_{i}"] = np.mean(
+            scores[f"f2_score_{label_name}"] = np.mean(
                 cross_val_score(
                     estimator=self._model,
                     X=X,
@@ -148,7 +158,7 @@ class BaseModel(ABC):
             ).round(4)
 
             # compute recall
-            scores[f"recall_label_{i}"] = np.mean(
+            scores[f"recall_{label_name}"] = np.mean(
                 cross_val_score(
                     estimator=self._model,
                     X=X,
@@ -216,7 +226,7 @@ class BaseModel(ABC):
 
         clf.fit(X, y)
 
-        logger.debug(f"Best parameters for {self}: {clf.best_estimator_}")
+        logger.debug(f"Best parameters for {self}:\n{clf.best_estimator_}")
 
         # reassign model
         self._model = clf.best_estimator_
@@ -224,3 +234,6 @@ class BaseModel(ABC):
 
 # define class model
 Model = TypeVar("Model", bound=BaseModel)
+
+# define model name
+ModelName = TypeVar("ModelName", bound=str)

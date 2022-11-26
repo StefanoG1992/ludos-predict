@@ -21,7 +21,7 @@ from sklearn.linear_model import LogisticRegression
 
 from sklearn.metrics import accuracy_score
 
-from ml.base import BaseModel
+from ml.base import BaseModel, Score
 
 
 class MostFrequentClassifier(BaseModel):
@@ -59,7 +59,7 @@ class MostFrequentClassifier(BaseModel):
         y_pred = self.predict(y)
 
         # add scores
-        scores: dict = {"accuracy": accuracy_score(y, y_pred)}
+        scores: dict[Score, float] = {"accuracy": accuracy_score(y, y_pred)}
 
         # add label specific scores
         for i in y.unique():
@@ -122,10 +122,10 @@ class SmartRandomClassifier(BaseModel):
         self.fit(X, y)
 
         # predict values
-        y_pred = self.predict(y)
+        y_pred: pd.Series = self.predict(y)
 
         # add scores
-        scores: dict = {"accuracy": accuracy_score(y, y_pred)}
+        scores: dict[Score, float] = {"accuracy": accuracy_score(y, y_pred)}
 
         # add label specific scores
         for i in y.unique():
@@ -165,8 +165,9 @@ class SimpleRegressionClassifier(BaseModel):
                     "predictor",
                     LogisticRegression(
                         penalty="l2",
+                        C=1.5,
                         class_weight="balanced",
-                        max_iter=300,
+                        max_iter=500,
                     ),
                 ),
             ]
