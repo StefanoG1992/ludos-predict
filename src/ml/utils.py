@@ -64,12 +64,13 @@ def get_shap_features(
     shap_values: list = explainer.shap_values(X_train_scl)
 
     # generate feature importances df
-    shap_array = np.array(shap_values)  # shape = # classes, # data, # features
+    # shap_array.shape = # classes, # data, # features
+    shap_array: npt.NDArray = np.array(shap_values)
     logger.debug(f"Shapley coefficients array has shape: {shap_array.shape}")
 
     # retrieve absolute importance
-    shap_array = np.abs(shap_array)  # get absolute importance
-    shap_array = shap_array.mean(1)  # shape (# classes, # features)
+    shap_array: npt.NDArray = np.abs(shap_array)  # get absolute importance
+    shap_array: npt.NDArray = shap_array.mean(1)  # shape (# classes, # features)
 
     # get it into a df
     features_df = pd.DataFrame(shap_array)
@@ -79,7 +80,7 @@ def get_shap_features(
     best_features: pd.Series = features_df.sum().sort_values(ascending=False)
 
     # taking first n values
-    best_n_features = best_features.iloc[:n_top]
+    best_n_features: list[str] = list(best_features.iloc[:n_top].index)
 
     return shap_values, best_n_features
 

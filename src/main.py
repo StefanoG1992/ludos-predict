@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import click
@@ -9,6 +10,7 @@ from ml import plot as mlplot
 from ml import models
 
 from ml.base import Model
+from ml.utils import get_shap_features
 
 from utils.log import config_logger
 
@@ -23,7 +25,12 @@ _MODEL_CHOICES = [
     "logistic",
 ]
 
-_SCORE_CHOICES = ["f1_score", "f2_score", "recall", "accuracy"]
+_SCORE_CHOICES = [
+    "f1_score",
+    "f2_score",
+    "recall",
+    "accuracy",
+]
 
 
 @click.group()
@@ -41,15 +48,58 @@ _SCORE_CHOICES = ["f1_score", "f2_score", "recall", "accuracy"]
     type=click.Path(exists=True, file_okay=False, path_type=Path),
     help="Path where to save outputs",
 )
+@click.option(
+    "-t",
+    "--use-top-cols",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    help="""Boolean flag. If passed, use only top 10 explanatory columns.
+    Explanability is computed via shapley algorithm, see ml.utils module.
+    """,
+)
 @click.pass_context
-def main(ctx: click.core.Context, input_path: Path, save_dir: Path):
+def main(
+    ctx: click.core.Context,
+    input_path: Path,
+    save_dir: Path,
+    use_top_cols: bool,
+):
     """Main function. Instance paths.
 
     :param ctx: click context, to be shared among commands
     :param input_path: path to csv data
     :param save_dir: path where to save outputs
+    :param use_top_cols: If true, use only top 10 explanatory columns.
+    Columns explanability is computed via shapley algorithm.
     """
-    ctx.obj = {"input_path": input_path, "save_dir": save_dir}
+    # initialize logger
+    logger = config_logger()
+    logger.info("Process started.")
+
+    logger.info(f"Reading data from {input_path}")
+    # read csv as dataframe, split as X, y
+    df = pd.read_csv(input_path)
+
+    X, y = df.iloc[:, :-1], df.iloc[:, -1].astype(int)
+
+    if use_top_cols is not None:
+        _, best_n_features = get_shap_features(X=X, y=y, n_top=10)
+        X = X.loc[:, best_n_features]
+
+    # remap response as integers starting with 0
+    classes = y.unique()
+    remap_classes = {cl: i for i, cl in enumerate(classes)}
+    y = y.map(remap_classes)
+
+    logger.info("Data instanced. Passing to step:")
+
+    # pass variables through context
+    ctx.obj = {
+        "save_dir": save_dir,
+        "X": X,
+        "y": y,
+    }
     pass
 
 
@@ -74,17 +124,15 @@ def plot(
         - 2d: encode data in 2d and plot distribution
     """
     # initialize logger
-    logger = config_logger()
-    logger.info("Saving pictures")
+    logger = logging.getLogger(__name__)
+    logger.info("Command plot: saving pictures.")
 
     # initialize context variables from main
-    input_path: Path = ctx.obj["input_path"]
     save_dir: Path = ctx.obj["save_dir"] / "plot"
-    save_dir.mkdir(exist_ok=True, parents=True)
+    save_dir.mkdir(exist_ok=True, parents=False)  # parent must exist
 
-    # read csv as dataframe, split as X, y
-    df = pd.read_csv(input_path)
-    X, y = df.iloc[:, :-1], df.iloc[:, -1].astype(int)
+    X: pd.DataFrame = ctx.obj["X"]
+    y: pd.Series = ctx.obj["y"]
 
     # plot functions dictionary
     # remap plot_graph to corresponding function
@@ -130,6 +178,7 @@ def test(
     ctx: click.core.Context,
     model_name: str,
     optimize: bool,
+    scoring: str,
 ):
     """Single tester for a ml model.
 
@@ -138,27 +187,20 @@ def test(
 
     :param ctx: click context inherited from main
     :param model_name: model to be tested
+    :param optimize: boolean. If true, optimize the method through a grid
+    :param scoring: scoring function. Metric choice for optimization step
     :return: None
     """
     # initialize logger
-    logger = config_logger()
-    logger.info("Execution step.")
+    logger = logging.getLogger(__name__)
+    logger.info("Command test: testing a single model")
 
     # initialize context variables from main
-    input_path: Path = ctx.obj["input_path"]
     save_dir: Path = ctx.obj["save_dir"] / "outputs"
-    save_dir.mkdir(exist_ok=True)
+    save_dir.mkdir(exist_ok=True, parents=False)  # parent must exist
 
-    logger.info(f"Reading data from {input_path}")
-    # read csv as dataframe, split as X, y
-    df = pd.read_csv(input_path)
-
-    X, y = df.iloc[:, :-1], df.iloc[:, -1].astype(int)
-
-    # remap response as integers starting with 0
-    classes = y.unique()
-    remap_classes = {cl: i for i, cl in enumerate(classes)}
-    y = y.map(remap_classes)
+    X: pd.DataFrame = ctx.obj["X"]
+    y: pd.Series = ctx.obj["y"]
 
     logger.info("Data instanced. Initializing model.")
     # model dictionary
@@ -193,7 +235,7 @@ def test(
         model_params = params[model_name]
 
         # optimize
-        model.optimize(X, y, model_params, "f1_score")
+        model.optimize(X, y, model_params, scoring)
     logger.info("Building step done. Getting scores:")
 
     # get model scores - model fit is done internally
