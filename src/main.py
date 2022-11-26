@@ -58,12 +58,20 @@ _SCORE_CHOICES = [
     Explanability is computed via shapley algorithm, see ml.utils module.
     """,
 )
+@click.option(
+    "-l",
+    "--log-dir",
+    default=None,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    help="Directory where to save logs. If None, logs are printed in stdout",
+)
 @click.pass_context
 def main(
     ctx: click.core.Context,
     input_path: Path,
     save_dir: Path,
     use_top_cols: bool,
+    log_dir: Path,
 ):
     """Main function. Instance paths.
 
@@ -71,10 +79,12 @@ def main(
     :param input_path: path to csv data
     :param save_dir: path where to save outputs
     :param use_top_cols: If true, use only top 10 explanatory columns.
-    Columns explanability is computed via shapley algorithm.
+    Columns explainability is computed via shapley algorithm.
+    :param log_dir: "Directory where to save logs.
+    If None, logs are only printed in stdout"
     """
     # initialize logger
-    logger = config_logger()
+    logger = config_logger(log_dir)
     logger.info("Process started.")
 
     logger.info(f"Reading data from {input_path}")

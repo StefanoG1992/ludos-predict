@@ -192,9 +192,9 @@ class BaseModel(ABC):
 
         :return: None. The self._model is overriden with optim parameters
         """
-        # check if self.mdl is instanced - if not, exit the function
-        # TODO change assert
-        assert self._model is not None, "Model not built"
+        # model must be already built
+        if self._model is None:
+            raise NotImplementedError("Model not built")
 
         if scoring not in self._scorers:
             raise NotImplementedError("Score not implemented")
@@ -215,6 +215,8 @@ class BaseModel(ABC):
         )
 
         clf.fit(X, y)
+
+        logger.debug(f"Best parameters for {self}: {clf.best_estimator_}")
 
         # reassign model
         self._model = clf.best_estimator_
