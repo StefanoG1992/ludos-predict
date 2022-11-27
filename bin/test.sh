@@ -13,7 +13,7 @@ else
 fi
 
 # logs are saved as _timestamp - removing all logs so only last one is present
-rm -r "${WORKDIR}"/logs ml_predict_*.log
+m -r "${WORKDIR}"/logs/ml_predict_*.log
 
 # shellcheck disable=SC2039
 if [[ "$2" == "-O" ]]; then
