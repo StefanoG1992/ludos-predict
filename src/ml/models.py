@@ -176,17 +176,17 @@ class SimpleRegressionClassifier(BaseModel):
         )
 
 
-class CatBoost(BaseModel):
-    """Simple regression classifier.
+class ScaledCatBoost(BaseModel):
+    """Scaled cat boost classifier.
 
-    This model performs a simple scaled logistic regression.
+    This model defines a scaled cat boost classifier.
     """
 
     def __init__(self):
         super().__init__()
 
     def __str__(self):
-        return "CatBoostClassifier"
+        return "ScaledCatBoostClassifier"
 
     def build(self):
         self._model = Pipeline(
@@ -196,7 +196,9 @@ class CatBoost(BaseModel):
                     "predictor",
                     CatBoostClassifier(
                         silent=True,
-                        early_stopping_rounds=100,
+                        early_stopping_rounds=200,
+                        l2_leaf_reg=1.0,
+                        num_trees=500,
                     ),
                 ),
             ]

@@ -25,7 +25,7 @@ _MODEL_CHOICES: list[ModelName] = [
     "most_frequent",
     "smart_random",
     "logistic",
-    "catboost",
+    "scaled_catboost",
 ]
 
 _SCORE_CHOICES: list[Score] = [
@@ -96,7 +96,7 @@ def main(
 
     X, y = df.iloc[:, :-1], df.iloc[:, -1].astype(int)
 
-    if use_top_cols is not None:
+    if use_top_cols:
         _, best_n_features = get_shap_features(X=X, y=y, n_top=10)
         X = X.loc[:, best_n_features]
 
@@ -222,7 +222,7 @@ def test(
         "most_frequent": models.MostFrequentClassifier,
         "smart_random": models.SmartRandomClassifier,
         "logistic": models.SimpleRegressionClassifier,
-        "catboost": models.CatBoost,
+        "scaled_catboost": models.ScaledCatBoost,
     }
 
     # initialize model
@@ -293,6 +293,7 @@ def challenge(ctx: click.core.Context):
     # better hard-coded dict than other solutions as eval, getattr...
     all_models: dict[str, Model] = {
         "logistic": models.SimpleRegressionClassifier(),  # already instanced
+        "scaled_catboost": models.ScaledCatBoost(),
     }
 
     # define global scores as dictionaries {model_name: model_scores}}}
