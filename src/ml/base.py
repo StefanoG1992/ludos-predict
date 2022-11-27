@@ -226,7 +226,7 @@ class BaseModel(ABC):
 
         clf.fit(X, y)
 
-        logger.debug(f"Best parameters for {self}:\n{clf.best_estimator_}")
+        logger.debug(f"Best parameters for {self}:\n{clf.best_params_}")
 
         # reassign model
         self._model = clf.best_estimator_

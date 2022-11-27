@@ -25,6 +25,7 @@ _MODEL_CHOICES: list[ModelName] = [
     "most_frequent",
     "smart_random",
     "logistic",
+    "catboost",
 ]
 
 _SCORE_CHOICES: list[Score] = [
@@ -221,10 +222,11 @@ def test(
         "most_frequent": models.MostFrequentClassifier,
         "smart_random": models.SmartRandomClassifier,
         "logistic": models.SimpleRegressionClassifier,
+        "catboost": models.CatBoost,
     }
 
     # initialize model
-    model: Model = mdls[model_name]()
+    model: Model = mdls[model_name]()  # instance class here
     logger.info(f"Model {model} initialized. Building:")
 
     # build model - define its internal structure
@@ -248,6 +250,7 @@ def test(
 
         # optimize
         model.optimize(X, y, model_params, scoring)
+        logger.info("Model optimized.")
     logger.info("Building step done. Getting scores:")
 
     # get model scores - model fit is done internally

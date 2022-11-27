@@ -19,6 +19,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 
+from catboost import CatBoostClassifier
+
 from sklearn.metrics import accuracy_score
 
 from ml.base import BaseModel, Score
@@ -168,6 +170,33 @@ class SimpleRegressionClassifier(BaseModel):
                         C=1.5,
                         class_weight="balanced",
                         max_iter=500,
+                    ),
+                ),
+            ]
+        )
+
+
+class CatBoost(BaseModel):
+    """Simple regression classifier.
+
+    This model performs a simple scaled logistic regression.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def __str__(self):
+        return "CatBoostClassifier"
+
+    def build(self):
+        self._model = Pipeline(
+            [
+                ("scaler", StandardScaler()),
+                (
+                    "predictor",
+                    CatBoostClassifier(
+                        silent=True,
+                        early_stopping_rounds=100,
                     ),
                 ),
             ]
