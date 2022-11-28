@@ -1,6 +1,6 @@
-"""Models module.
+"""Utils module.
 
-This module contains all self-made ML models for data science purposes
+This module stores utility functions to support ml models
 """
 
 import logging
@@ -64,12 +64,13 @@ def get_shap_features(
     shap_values: list = explainer.shap_values(X_train_scl)
 
     # generate feature importances df
-    shap_array = np.array(shap_values)  # shape = (# classes, # data, # features)
+    # shap_array.shape = # classes, # data, # features
+    shap_array: npt.NDArray = np.array(shap_values)
     logger.debug(f"Shapley coefficients array has shape: {shap_array.shape}")
 
     # retrieve absolute importance
-    shap_array = np.abs(shap_array)  # get absolute importance
-    shap_array = shap_array.mean(1)  # shape (# classes, # features)
+    shap_array: npt.NDArray = np.abs(shap_array)  # get absolute importance
+    shap_array: npt.NDArray = shap_array.mean(1)  # shape (# classes, # features)
 
     # get it into a df
     features_df = pd.DataFrame(shap_array)
@@ -79,31 +80,52 @@ def get_shap_features(
     best_features: pd.Series = features_df.sum().sort_values(ascending=False)
 
     # taking first n values
-    best_n_features = best_features.iloc[:n_top]
+    best_n_features: list[str] = list(best_features.iloc[:n_top].index)
 
     return shap_values, best_n_features
 
 
-def encoder(X: pd.DataFrame | npt.NDArray | list, reg: MLPRegressor) -> npt.NDArray:
+def encoder(
+    X: pd.DataFrame | npt.NDArray | list, reg: MLPRegressor, steps: int
+) -> npt.NDArray:
     """Encode data in 2D.
 
+    It assumes layers: (n_1, n_2, ... n_k, 2, n_k, ... n_1)
     :param X: explanatory data
     :param reg: trained model
+    :param steps: step to reach 2D layer
     :return: encoded array of 2D data
     """
-    X = np.asmatrix(X)
+    encoded = np.asmatrix(X)  # at step 0, encoded is X
 
-    encoder1 = X * reg.coefs_[0] + reg.intercepts_[0]
-    encoder1 = (np.exp(encoder1) - np.exp(-encoder1)) / (
-        np.exp(encoder1) + np.exp(-encoder1)
-    )
+    for i in range(steps):
+        linear = encoded * reg.coefs_[i] + reg.intercepts_[i]
+        encoded = (np.exp(linear) - np.exp(-linear)) / (
+            np.exp(linear) + np.exp(-linear)
+        )
 
-    encoder2 = encoder1 * reg.coefs_[1] + reg.intercepts_[1]
-    encoder2 = (np.exp(encoder2) - np.exp(-encoder2)) / (
-        np.exp(encoder2) + np.exp(-encoder2)
-    )
+    return np.asarray(encoded)
 
-    latent = encoder2 * reg.coefs_[2] + reg.intercepts_[2]
-    latent = (np.exp(latent) - np.exp(-latent)) / (np.exp(latent) + np.exp(-latent))
 
-    return np.asarray(latent)
+def autoencode_precision(X: npt.NDArray, reg: MLPRegressor) -> np.float64:
+    """Accuracy metric for autoencoders.
+
+    Compute X_enc as the autoencoded X, then measure their difference as follows:
+    - compute the percentage array X_pctg = abs(X-X_enc)/abs(X_enc) [no division by 0]
+    - return avg(X_pctg).
+
+    :param X: array to test
+    :param reg: trained autoencoder
+    :return: autoencoder accuracy
+    """
+    # from here just math
+    X_enc = reg.predict(X)
+    X_diff = np.abs(X - X_enc)
+    X_pctg = np.divide(
+        X_diff, np.abs(X), out=np.copy(X_diff), where=(np.abs(X) >= 0.1)
+    ).round(4)
+
+    avg_error_pctg = np.mean(np.abs(X_pctg))
+
+    # precision = 1 - error
+    return 1 - avg_error_pctg

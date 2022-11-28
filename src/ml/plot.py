@@ -15,9 +15,10 @@ import seaborn as sns
 
 from sklearn.model_selection import train_test_split
 
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.neural_network import MLPRegressor
 
-from models.models import get_shap_features, encoder
+from ml.utils import get_shap_features, encoder, autoencode_precision
 
 
 # initialize logger
@@ -128,7 +129,7 @@ def plot_2d(
 
     title = "2D encoded data"
 
-    # creating train test split
+    # creating fit test split
     # y_train not used
     X_train, X_test, _, y_test = train_test_split(
         X,
@@ -138,19 +139,37 @@ def plot_2d(
     )
 
     logger.info("Define autoencoding model.")
+
+    # define layers
+    hidden_layers = (18, 14, 10, 7, 5, 2, 5, 7, 10, 14, 18)
+    steps_to_2d = int((len(hidden_layers) + 1) / 2)  # half size hidden layers
+
+    # scale the result - autoencoder is very sensitive to scaling
+    scaler = MinMaxScaler()
+
+    # fit results on X_train, transform X_test as well
+    X_train_scl = scaler.fit_transform(X_train)
+    X_test_scl = scaler.transform(X_test)
+
+    # define model
     reg = MLPRegressor(
-        hidden_layer_sizes=(10, 5, 2, 5, 10),
+        hidden_layer_sizes=hidden_layers,
         activation="tanh",
         solver="adam",
-        learning_rate_init=0.0001,
-        # max_iter=40,
+        learning_rate_init=0.01,
+        max_iter=200,
     )
 
-    logger.info("Fitting model")
-    reg.fit(X_train, X_train)  # for autoencoders, same matrix is train & test
+    logger.info("Fitting model...")
+    reg.fit(X_train_scl, X_train_scl)  # for autoencoders, same matrix is fit & test
+
+    # due to MinMax scaling & precision linearity, no need to inverse_transform
+    avg_precision = autoencode_precision(X_test_scl, reg)
+
+    logger.info(f"Model fitted. Average difference: {avg_precision:.2%}")
 
     # define encoded variables
-    X_encoded: npt.NDArray = encoder(X_test, reg)
+    X_encoded: npt.NDArray = encoder(X_test, reg, steps_to_2d)
 
     # reset y_test index - needed as X_encoded has lost X_test indexing
     y_test.reset_index(inplace=True, drop=True)

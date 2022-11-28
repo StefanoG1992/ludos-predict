@@ -1,0 +1,33 @@
+# parameters for model optimization
+logistic:
+  predictor__penalty:
+    - l2
+  predictor__max_iter:
+    - 500
+  predictor__class_weight:
+    - null
+    - balanced
+  predictor__C:
+    - 0.5
+    - 1
+    - 1.5
+catboost:
+  early_stopping_rounds:
+    - 200
+  model_size_reg:
+    - 0.0
+    - 10.0
+  l2_leaf_reg:
+    - 1.0
+    - 3.0
+    - 5.0
+  class_weights:  # unweighted vs weighted
+    - 1: 1.0
+      0: 1.0
+      2: 1.0
+    - 1: 0.778457
+      0: 0.138758
+      2: 0.082785
+  num_trees:
+    - 200
+    - 500

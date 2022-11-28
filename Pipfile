@@ -6,13 +6,15 @@ name = "pypi"
 [packages]
 pandas = "*"
 numpy = "*"
-seaborn = "*"
 matplotlib = "*"
-sklearn = "*"
+seaborn = "*"
+scikit-learn = "*"
 imblearn = "*"
 catboost = "*"
-shap = "*"
 click="*"
+shap = "*"
+PyYAML = "*"
+xgboost="*"
 
 [dev-packages]
 black = "*"

@@ -16,13 +16,13 @@ bin folder contains main executables. They execute main script commands.
 
 In order to run bin commands, you need to do the following:
 
-- open your favorite terminal, and cd folder bin in this repo
+- open your favorite terminal, and cd repo directory
 - define a file called '.env' containing following variables:
   - WORKDIR=/path/to/working/directory  # where you cloned repository
   - DATAPATH=/path/to/data.csv  # where you saved original data
   - OUTPUTDIR=/path/to/output  # where you want to store output results
-- Run from terminal
-The repository contains a test.env file emulating how final .env should be.
+- Run executables from termial
+The repository contains a test.env file emulating how the true .env should be.
 
 Please note the following:
 - All ./bin executables source .env, so you need to create it otherwise *they will not work*
