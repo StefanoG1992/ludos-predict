@@ -5,7 +5,7 @@ cd "${WORKDIR}" || exit
 # shellcheck disable=SC2039
 source .env
 
-# if 3rd parameter is passed, it will be treated as scoring
+# if 2nd parameter is passed, it will be treated as scoring
 if [ -z "$2" ]; then
   metric="f1_score"
 else

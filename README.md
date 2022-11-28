@@ -1,8 +1,12 @@
-# ml-predict
+# Ludos-predict
 
 Machine learning exercise, whose goal is to classify fetal health in order to prevent problems during pregnancy.
 
 Data are taken from [Kaggle Fetal Health Classification dataset](https://www.kaggle.com/datasets/andrewmvd/fetal-health-classification)
+
+This repo has one direct goal and a 'meta' goal:
+- The direct one is to solve the exercise by building a stable predictor
+- The 'meta' one is to design and present a stable architecture for ml projects
 
 ### Executing scripts
 All python script is contained in source. The main executable is src/main.py.
@@ -22,8 +26,14 @@ In order to run bin commands, you need to do the following:
   - DATAPATH=/path/to/data.csv  # where you saved original data
   - OUTPUTDIR=/path/to/output  # where you want to store output results
 - Run executables from termial
-The repository contains a test.env file emulating how the true .env should be.
+The repository contains a test.env file emulating how the *real* .env should be.
 
 Please note the following:
 - All ./bin executables source .env, so you need to create it otherwise *they will not work*
 - All ./bin executables assume a pipenv virtual environment has been created, so install it before
+
+
+#### Acknowledgments
+
+Special thanks to my dear old friend @clarkmaio for presenting me the exercise and for our discussions on ml topics
+and techniques.

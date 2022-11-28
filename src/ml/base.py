@@ -85,7 +85,9 @@ class BaseModel(ABC):
         self.build()
         self.fit(X, y)
 
-    def evaluate(self, X: pd.DataFrame, y: pd.Series, cv: int = 5) -> dict[str, float]:
+    def evaluate(
+        self, X: pd.DataFrame, y: pd.Series, cv: int = 5
+    ) -> dict[Score, float]:
         """Evaluate the model via cross validation over several metrics.
 
         Train-test split is performed during cross validation.
@@ -103,7 +105,7 @@ class BaseModel(ABC):
             raise NotImplementedError("Model not built")
 
         # define metrics dictionary
-        scores: dict = {}
+        scores: dict[Score, float] = {}
 
         logger.info(f"Compute metrics for {self}")
 
@@ -210,7 +212,7 @@ class BaseModel(ABC):
             raise NotImplementedError("Score not implemented")
 
         scoring_map = {
-            "accuracy": None,  # None is default for GridSearchCV accuracy,
+            "accuracy": None,  # None is default for GridSearchCV accuracy
             "f1_score": make_scorer(f_score, beta=1.0),
             "f2_score": make_scorer(f_score, beta=2.0),
             "recall": make_scorer(recall),
