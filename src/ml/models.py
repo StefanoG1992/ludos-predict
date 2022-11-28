@@ -15,9 +15,15 @@ import pandas as pd
 
 from ml import scores as sc
 
+from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import RandomUnderSampler
+
+from imblearn.pipeline import Pipeline as PipelineSMOTE
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
 
 from catboost import CatBoostClassifier
 
@@ -148,10 +154,7 @@ class SmartRandomClassifier(BaseModel):
 
 
 class SimpleRegressionClassifier(BaseModel):
-    """Simple regression classifier.
-
-    This model performs a simple scaled logistic regression.
-    """
+    """Simple regression classifier."""
 
     def __init__(self):
         super().__init__()
@@ -176,29 +179,107 @@ class SimpleRegressionClassifier(BaseModel):
         )
 
 
-class ScaledCatBoost(BaseModel):
-    """Scaled cat boost classifier.
-
-    This model defines a scaled cat boost classifier.
-    """
+class CatBoost(BaseModel):
+    """Cat boost classifier."""
 
     def __init__(self):
         super().__init__()
 
     def __str__(self):
-        return "ScaledCatBoostClassifier"
+        return "CatBoostClassifier"
 
     def build(self):
-        self._model = Pipeline(
+        self._model = CatBoostClassifier(
+            silent=True,
+            early_stopping_rounds=200,
+            num_trees=500,
+        )
+
+
+class RandomForest(BaseModel):
+    """Random Tree forest classifier."""
+
+    def __init__(self):
+        super().__init__()
+
+    def __str__(self):
+        return "RandomForestClassifier"
+
+    def build(self):
+        self._model = RandomForestClassifier(
+            n_estimators=500,
+        )
+
+
+class XGB(BaseModel):
+    """XGB Classifier."""
+
+    def __init__(self):
+        super().__init__()
+
+    def __str__(self):
+        return "XGBoostClassifier"
+
+    def build(self):
+        self._model = XGBClassifier(
+            n_estimators=500,
+            n_jobs=10,
+            max_depth=10,
+            subsample=0.8,
+            gpu_id=0,
+            alpha=1.0,
+            objective="multi:softmax",
+            num_class=3,
+            min_child_weight=1,
+        )
+
+
+class CatBoostSmote(BaseModel):
+    """Cat boost classifier with SMOTE algorithm."""
+
+    def __init__(self):
+        super().__init__()
+
+    def __str__(self):
+        return "CatBoostSmoteClassifier"
+
+    def build(self):
+        self._model = PipelineSMOTE(
             [
-                ("scaler", StandardScaler()),
+                ("SMOTE", SMOTE()),
+                ("under", RandomUnderSampler()),
                 (
-                    "predictor",
+                    "model",
                     CatBoostClassifier(
-                        silent=True,
-                        early_stopping_rounds=200,
-                        l2_leaf_reg=1.0,
+                        early_stopping_rounds=50,
                         num_trees=500,
+                        verbose=0,
+                    ),
+                ),
+            ]
+        )
+
+
+class XGBSmote(BaseModel):
+    """XGB with SMOTE algorithm."""
+
+    def __init__(self):
+        super().__init__()
+
+    def __str__(self):
+        return "XGBSmoteClassifier"
+
+    def build(self):
+        self._model = PipelineSMOTE(
+            [
+                ("SMOTE", SMOTE()),
+                ("under", RandomUnderSampler()),
+                (
+                    "model",
+                    XGBClassifier(
+                        n_jobs=10,
+                        max_depth=5,
+                        subsample=0.8,
                     ),
                 ),
             ]

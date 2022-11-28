@@ -12,22 +12,22 @@ logistic:
     - 1
     - 1.5
 catboost:
-  predictor__early_stopping_rounds:
+  early_stopping_rounds:
     - 200
-  predictor__model_size_reg:
+  model_size_reg:
     - 0.0
     - 10.0
-  predictor__l2_leaf_reg:
+  l2_leaf_reg:
     - 1.0
     - 3.0
     - 5.0
-  predictor__class_weights:  # unweighted vs weighted
+  class_weights:  # unweighted vs weighted
     - 1: 1.0
       0: 1.0
       2: 1.0
     - 1: 0.778457
       0: 0.138758
       2: 0.082785
-  predictor__num_trees:
+  num_trees:
     - 200
     - 500
