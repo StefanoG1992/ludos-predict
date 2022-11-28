@@ -25,7 +25,11 @@ _MODEL_CHOICES: list[ModelName] = [
     "most_frequent",
     "smart_random",
     "logistic",
-    "scaled_catboost",
+    "catboost",
+    "random_forest",
+    "XGB",
+    "catboost_smote",
+    "XGB_smote",
 ]
 
 _SCORE_CHOICES: list[Score] = [
@@ -219,14 +223,16 @@ def test(
     # model dictionary
     # we can execute commands in a compact way avoiding multiple ifs
     mdls = {
-        "most_frequent": models.MostFrequentClassifier,
-        "smart_random": models.SmartRandomClassifier,
-        "logistic": models.SimpleRegressionClassifier,
-        "scaled_catboost": models.ScaledCatBoost,
+        "logistic": models.SimpleRegressionClassifier(),
+        "catboost": models.CatBoost(),
+        "random_forest": models.RandomForest(),
+        "XGB": models.XGB(),
+        "catboost_smote": models.CatBoostSmote(),
+        "XGB_smote": models.CatBoostSmote(),
     }
 
     # initialize model
-    model: Model = mdls[model_name]()  # instance class here
+    model: Model = mdls[model_name]
     logger.info(f"Model {model} initialized. Building:")
 
     # build model - define its internal structure
@@ -293,7 +299,11 @@ def challenge(ctx: click.core.Context):
     # better hard-coded dict than other solutions as eval, getattr...
     all_models: dict[str, Model] = {
         "logistic": models.SimpleRegressionClassifier(),  # already instanced
-        "scaled_catboost": models.ScaledCatBoost(),
+        "catboost": models.CatBoost(),
+        "random_forest": models.RandomForest(),
+        "XGB": models.XGB(),
+        "catboost_smote": models.CatBoostSmote(),
+        "XGB_smote": models.CatBoostSmote(),
     }
 
     # define global scores as dictionaries {model_name: model_scores}}}
