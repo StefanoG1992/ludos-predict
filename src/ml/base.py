@@ -12,15 +12,15 @@ instances it on self.mdl. This depends on specific model
 
 import logging
 
+from abc import ABC, abstractmethod
+
 import numpy as np
 import pandas as pd
 
-import core.checks as check
-
-from abc import ABC, abstractmethod
-
 from sklearn.model_selection import cross_val_score, GridSearchCV
 from sklearn.metrics import make_scorer
+
+import core.checks as check
 
 from ml.scores import f_score, recall
 
@@ -134,10 +134,8 @@ class BaseModel(ABC):
         for i in labels:
             # compute f1 score
             # order names
-            if i is not None:
-                label_name = f"label_{i}"
-            else:
-                label_name = "avg"
+            label_name = f"label_{i}" if i is not None else "avg"
+
             scores[f"f1_score_{label_name}"] = np.mean(
                 cross_val_score(
                     estimator=self._model,
@@ -201,8 +199,6 @@ class BaseModel(ABC):
         or {param_name: math.distribution}
         :param scoring: scoring metric
         :param cv: cross validation n-folds. Default is 5
-
-        :return: None. The self._model is overriden with optim parameters
         """
         # model must be already built
         if self._model is None:

@@ -117,7 +117,6 @@ def main(
         "X": X,
         "y": y,
     }
-    pass
 
 
 @main.command
@@ -206,7 +205,6 @@ def test(
     :param model_name: model to be tested
     :param optimize: boolean. If true, optimize the method through a grid
     :param scoring: scoring function. Metric choice for optimization step
-    :return: None
     """
     # initialize logger
     logger = logging.getLogger(__name__)
@@ -246,7 +244,7 @@ def test(
         assert params_path.exists(), "optim-params.yaml not found in root"
 
         # load params
-        with open(params_path, "rt") as params_file:
+        with open(params_path, "rt", encoding="UTF-8") as params_file:
             params: dict[ModelName, dict[str, list]] = yaml.load(
                 params_file, Loader=yaml.FullLoader
             )
@@ -265,7 +263,7 @@ def test(
     logger.info("Scores computed. Saving as yaml:")
     save_path = save_dir / f"{model}.yaml"
 
-    with open(save_path, "wt") as f:
+    with open(save_path, "wt", encoding="UTF-8") as f:
         yaml.dump(scores, f)
 
     logger.info(f"Scores saved to path {save_path}")
@@ -326,16 +324,16 @@ def challenge(ctx: click.core.Context):
 
     challenge_result: dict[Score, dict[ModelName, float]] = {
         score: {
-            mdl_name: all_scores[mdl_name][score]
-            for mdl_name in all_scores
-            if score in all_scores[mdl_name]
+            mdl_name: mdl_score
+            for mdl_name, mdl_score in all_scores.items()
+            if score in mdl_score
         }
         for score in scores_list
     }
 
     save_path = save_dir / "challenge_result.yaml"
 
-    with open(save_path, "wt") as f:
+    with open(save_path, "wt", encoding="UTF-8") as f:
         yaml.dump(challenge_result, f)
 
     logger.info(f"Change results saved to path {save_path}")
